@@ -71,11 +71,8 @@ function populateAllDropdowns() {
     kelasTargets.forEach(id => {
         const el = document.getElementById(id);
         if (!el) return;
-
-        // PENTING: Mengambil teks default dari HTML (yang sudah kita ubah jadi 'Pilih Kelas')
         const defaultText = el.options[0].text;
         el.innerHTML = `<option value="">${defaultText}</option>`;
-
         kelasOptions.forEach(k => {
             const opt = document.createElement('option');
             opt.value = k.nama_kelas;
@@ -105,8 +102,7 @@ async function fetchData() {
     }
 }
 
-// --- LOGIC JURNAL YANG DIPERBARUI ---
-
+// --- LOGIC JURNAL ---
 function renderJurnalTable() {
     const tbody = document.getElementById('jurnal-table-body');
     const fKelas = document.getElementById('filterKelasJurnal').value;
@@ -114,7 +110,6 @@ function renderJurnalTable() {
 
     if (!tbody) return;
 
-    // 1. Filter dasar berdasarkan dropdown
     const filtered = allJurnalData.filter(item => {
         const matchK = fKelas === "" || item.kelas === fKelas;
         const matchM = fMapel === "" || item.mapel === fMapel;
@@ -126,14 +121,9 @@ function renderJurnalTable() {
         return;
     }
 
-    // 2. LOGIC UNIQUE GROUPING
-    // Kita kelompokkan data agar tidak berulang per siswa.
-    // Kunci unik: Tanggal + Kelas + Mapel + Jam + Materi
     const uniqueJournal = [];
     const seen = new Set();
-
     filtered.forEach(item => {
-        // Buat key unik
         const key = `${item.tanggal}-${item.kelas}-${item.mapel}-${item.jam}-${item.materi}`;
         if (!seen.has(key)) {
             seen.add(key);
@@ -141,39 +131,31 @@ function renderJurnalTable() {
         }
     });
 
-    // 3. Render Tabel (Tanpa Tombol Aksi)
     tbody.innerHTML = uniqueJournal.map(j => `
         <tr class="hover:bg-blue-50 transition-colors border-b">
-            <!-- Format Tanggal Baru: Selasa, 13 Jan -->
             <td class="p-3 text-gray-500 whitespace-nowrap capitalize">${formatDate(j.tanggal)}</td>
-
-            <td class="p-3">
-                <span class="bg-gray-100 text-gray-800 text-xs font-bold px-2 py-1 rounded">${j.kelas}</span>
-            </td>
-
+            <td class="p-3"><span class="bg-gray-100 text-gray-800 text-xs font-bold px-2 py-1 rounded">${j.kelas}</span></td>
             <td class="p-3 font-medium text-gray-700">${j.mapel}</td>
-
             <td class="p-3 text-gray-600 text-sm italic truncate max-w-[200px]">${j.materi || '-'}</td>
-
             <td class="p-3 text-center text-gray-500 text-sm">${j.jam || '-'}</td>
         </tr>
     `).join('');
 }
 
-// --- FUNGSI FORMAT TANGGAL BARU ---
 function formatDate(dateString) {
     if(!dateString) return '-';
+    // Pakai Date Object biasa karena data dari DB sudah UTC-Corrected
     const d = new Date(dateString);
-    // Format: Selasa, 13 Jan
-    return d.toLocaleDateString('id-ID', {
-        weekday: 'long',
-        day: 'numeric',
-        month: 'short'
-    });
+    return d.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short' });
 }
 
-// --- SISA KODE LOGIC LAINNYA (ABSENSI & NILAI) TETAP SAMA ---
+// --- HELPER UNTUK TANGGAL WIB ---
+function getWIBDateString() {
+    // Menghasilkan string format YYYY-MM-DD sesuai zona waktu Jakarta
+    return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
+}
 
+// ... Logic Absensi ...
 function loadAbsensiList() {
     const kelas = document.getElementById('absensiKelas').value;
     const container = document.getElementById('absensi-list-container');
@@ -200,18 +182,10 @@ function loadAbsensiList() {
                 </td>
                 <td class="p-3">
                     <div class="flex justify-center gap-2">
-                        <label class="cursor-pointer flex flex-col items-center">
-                            <input type="radio" name="status_${index}" value="Hadir" checked class="peer sr-only"><span class="w-8 h-8 rounded-full bg-gray-100 text-gray-500 peer-checked:bg-green-500 peer-checked:text-white flex items-center justify-center font-bold text-xs transition-all">H</span>
-                        </label>
-                        <label class="cursor-pointer flex flex-col items-center">
-                            <input type="radio" name="status_${index}" value="Sakit" class="peer sr-only"><span class="w-8 h-8 rounded-full bg-gray-100 text-gray-500 peer-checked:bg-yellow-500 peer-checked:text-white flex items-center justify-center font-bold text-xs transition-all">S</span>
-                        </label>
-                        <label class="cursor-pointer flex flex-col items-center">
-                            <input type="radio" name="status_${index}" value="Izin" class="peer sr-only"><span class="w-8 h-8 rounded-full bg-gray-100 text-gray-500 peer-checked:bg-blue-500 peer-checked:text-white flex items-center justify-center font-bold text-xs transition-all">I</span>
-                        </label>
-                        <label class="cursor-pointer flex flex-col items-center">
-                            <input type="radio" name="status_${index}" value="Alpha" class="peer sr-only"><span class="w-8 h-8 rounded-full bg-gray-100 text-gray-500 peer-checked:bg-red-500 peer-checked:text-white flex items-center justify-center font-bold text-xs transition-all">A</span>
-                        </label>
+                        <label class="cursor-pointer flex flex-col items-center"><input type="radio" name="status_${index}" value="Hadir" checked class="peer sr-only"><span class="w-8 h-8 rounded-full bg-gray-100 text-gray-500 peer-checked:bg-green-500 peer-checked:text-white flex items-center justify-center font-bold text-xs transition-all">H</span></label>
+                        <label class="cursor-pointer flex flex-col items-center"><input type="radio" name="status_${index}" value="Sakit" class="peer sr-only"><span class="w-8 h-8 rounded-full bg-gray-100 text-gray-500 peer-checked:bg-yellow-500 peer-checked:text-white flex items-center justify-center font-bold text-xs transition-all">S</span></label>
+                        <label class="cursor-pointer flex flex-col items-center"><input type="radio" name="status_${index}" value="Izin" class="peer sr-only"><span class="w-8 h-8 rounded-full bg-gray-100 text-gray-500 peer-checked:bg-blue-500 peer-checked:text-white flex items-center justify-center font-bold text-xs transition-all">I</span></label>
+                        <label class="cursor-pointer flex flex-col items-center"><input type="radio" name="status_${index}" value="Alpha" class="peer sr-only"><span class="w-8 h-8 rounded-full bg-gray-100 text-gray-500 peer-checked:bg-red-500 peer-checked:text-white flex items-center justify-center font-bold text-xs transition-all">A</span></label>
                     </div>
                 </td>
                 <td class="p-3">
@@ -236,6 +210,9 @@ async function submitBatchAbsensi() {
     const rows = tbody.querySelectorAll('tr');
     const payloadData = [];
 
+    // UPDATE FIX: Gunakan helper WIB Date
+    const todayWIB = getWIBDateString();
+
     rows.forEach((row, index) => {
         const nisn = row.querySelector(`input[name="nisn_${index}"]`).value;
         const nama = row.querySelector(`input[name="nama_${index}"]`).value;
@@ -245,7 +222,9 @@ async function submitBatchAbsensi() {
         payloadData.push({
             nisn: nisn, nama: nama, kelas: kelas, kehadiran: status,
             nilaiHarian: parseInt(nilai) || 0, mapel: mapel, materi: materi,
-            jam: jam, tanggal: new Date().toISOString().split('T')[0], email: userEmail
+            jam: jam,
+            tanggal: todayWIB, // FIX: Mengirim tanggal WIB
+            email: userEmail
         });
     });
 
@@ -275,6 +254,7 @@ async function submitBatchAbsensi() {
     }
 }
 
+// ... Logic Nilai ... (Tidak berubah signifikan selain menggunakan helper tanggal di backend)
 function loadNilaiList() {
     const kelas = document.getElementById('nilaiKelas').value;
     const jenisUjian = document.getElementById('nilaiJenis').value;
@@ -365,7 +345,6 @@ function resetAllForms() {
     document.getElementById('absensiJam').value = "";
     document.getElementById('absensi-list-container').classList.add('hidden');
     document.getElementById('absensi-placeholder').classList.remove('hidden');
-
     document.getElementById('nilaiKelas').value = "";
     document.getElementById('nilaiMapel').value = "";
     const elJenis = document.getElementById('nilaiJenis');
@@ -421,7 +400,6 @@ function showNotify(type, msg) {
     setTimeout(() => div.remove(), 3000);
 }
 async function deleteData(id) {
-    // Fungsi ini tidak lagi digunakan di Jurnal View, tapi dibiarkan jika dibutuhkan di tempat lain
     if (!confirm('Hapus data ini?')) return;
     toggleLoader(true);
     try {
