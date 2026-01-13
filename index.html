@@ -3,193 +3,238 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Dashboard Sekolah</title>
+    <title>SIAKAD AL FATAH</title>
     <link rel="icon" type="image/png" href="favicon.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@0.292.0"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <link rel="stylesheet" href="style.css">
+    <style>
+        .loader { border: 3px solid #f3f3f3; border-top: 3px solid #3498db; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .tab-active { border-bottom: 2px solid #2563eb; color: #2563eb; font-weight: 600; }
+        .tab-inactive { color: #6b7280; }
+        .tab-inactive:hover { color: #374151; }
+        select { text-overflow: ellipsis; white-space: nowrap; overflow: hidden; max-width: 100%; }
+    </style>
 </head>
-<body class="bg-gray-50">
+<body class="bg-gray-50 text-gray-800 font-sans">
 
-    <div id="auth-overlay" class="fixed inset-0 bg-gray-900/90 z-[100] flex items-center justify-center p-4">
+    <!-- Auth Overlay -->
+    <div id="auth-overlay" class="fixed inset-0 bg-gray-900/95 z-[100] flex items-center justify-center p-4 transition-all duration-500">
         <div class="bg-white p-8 rounded-2xl shadow-2xl max-w-sm w-full text-center">
-            <div class="bg-blue-600 w-16 h-16 rounded-full flex items-center justify-center text-white mx-auto mb-4">
+            <div class="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center text-blue-600 mx-auto mb-4">
                 <i data-lucide="lock" class="w-8 h-8"></i>
             </div>
-            <h2 class="text-2xl font-bold text-gray-800 mb-2">Akses Terbatas</h2>
-            <p class="text-gray-500 mb-6 text-sm">Silakan masuk dengan akun Google untuk menggunakan dashboard.</p>
-            <div id="google-btn-container" class="flex justify-center"></div>
+            <h2 class="text-2xl font-bold text-gray-800 mb-2">Login Guru</h2>
+            <div id="google-btn-container" class="flex justify-center mt-4"></div>
         </div>
     </div>
 
-    <div id="main-app" class="min-h-screen flex flex-col md:flex-row max-w-7xl mx-auto shadow-2xl overflow-hidden bg-white blur-sm pointer-events-none transition-all duration-500">
+    <!-- Main App -->
+    <div id="main-app" class="min-h-screen flex flex-col blur-sm pointer-events-none transition-all duration-500">
 
-        <aside class="md:w-64 bg-white border-r border-gray-200 flex flex-col z-10">
-            <div class="p-6 border-b border-gray-100 flex items-center space-x-3">
-                <div class="bg-blue-600 text-white p-2 rounded-lg">
-                    <i data-lucide="graduation-cap"></i>
+        <!-- Navbar -->
+        <nav class="bg-white border-b sticky top-0 z-30 shadow-sm">
+            <div class="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
+                <div class="flex items-center gap-2 font-bold text-xl text-blue-600">
+                    <i data-lucide="school" class="w-6 h-6"></i>
+                    <span>SIAKAD v2</span>
                 </div>
-                <h1 class="font-bold text-gray-800 text-lg leading-tight">Admin<br/><span class="text-blue-600">Sekolah</span></h1>
+                <div class="flex items-center gap-3">
+                    <div class="text-right hidden sm:block">
+                        <div id="user-name" class="text-sm font-semibold text-gray-800">Guru</div>
+                    </div>
+                    <img id="user-photo" src="" class="w-9 h-9 rounded-full border hidden">
+                    <button onclick="logout()" class="p-2 text-gray-500 hover:bg-red-50 hover:text-red-500 rounded-lg">
+                        <i data-lucide="log-out" class="w-5 h-5"></i>
+                    </button>
+                </div>
             </div>
-            
-            <nav class="flex-1 p-4 space-y-2 overflow-y-auto" id="nav-menu">
-                <button onclick="switchTab('dashboard')" class="nav-btn w-full flex items-center p-3 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors active-tab-btn" data-tab="dashboard">
-                    <i data-lucide="layout-dashboard" class="mr-3 w-5 h-5"></i> Dashboard
-                </button>
-                <div class="pt-4 pb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider pl-3">Menu Utama</div>
-                <button onclick="switchTab('absensi')" class="nav-btn w-full flex items-center p-3 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors" data-tab="absensi">
-                    <i data-lucide="clipboard-list" class="mr-3 w-5 h-5"></i> Absensi
-                </button>
-                <button onclick="switchTab('nilai')" class="nav-btn w-full flex items-center p-3 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors" data-tab="nilai">
-                    <i data-lucide="award" class="mr-3 w-5 h-5"></i> Nilai
-                </button>
-                <button onclick="switchTab('jurnal')" class="nav-btn w-full flex items-center p-3 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors" data-tab="jurnal">
-                    <i data-lucide="book-open" class="mr-3 w-5 h-5"></i> Jurnal
-                </button>
-            </nav>
+        </nav>
 
-            <div class="p-4 border-t border-gray-200">
-                <div class="flex items-center space-x-3 text-sm text-gray-600">
-                    <img id="user-photo" src="" class="w-8 h-8 rounded-full bg-gray-200 border border-gray-100 hidden">
-                    <div class="flex flex-col truncate">
-                        <span id="user-name" class="font-bold text-gray-800 truncate">Nama Guru</span>
-                        <span id="user-display" class="text-[10px] text-gray-400 truncate">Gmail@gmail.com</span>
-                    </div>
-                </div>
-                <button onclick="logout()" class="mt-3 w-full text-xs text-red-500 bg-red-50 hover:bg-red-100 py-2 rounded-lg font-medium transition-colors">Log Out</button>
+        <main class="flex-1 max-w-4xl mx-auto w-full p-4">
+
+            <!-- Tab Navigation -->
+            <div class="flex border-b border-gray-200 mb-6 bg-white rounded-t-lg px-2 overflow-x-auto">
+                <button onclick="switchTab('absensi')" id="tab-absensi" class="tab-active flex-1 py-4 text-center text-sm font-medium transition-colors flex items-center justify-center gap-2 min-w-[100px]">
+                    <i data-lucide="check-square" class="w-4 h-4"></i> Absensi
+                </button>
+                <button onclick="switchTab('nilai')" id="tab-nilai" class="tab-inactive flex-1 py-4 text-center text-sm font-medium transition-colors flex items-center justify-center gap-2 min-w-[100px]">
+                    <i data-lucide="bar-chart-2" class="w-4 h-4"></i> Input Nilai
+                </button>
+                <button onclick="switchTab('jurnal')" id="tab-jurnal" class="tab-inactive flex-1 py-4 text-center text-sm font-medium transition-colors flex items-center justify-center gap-2 min-w-[100px]">
+                    <i data-lucide="history" class="w-4 h-4"></i> Jurnal
+                </button>
             </div>
-        </aside>
 
-        <main class="flex-1 flex flex-col h-screen overflow-hidden relative">
-            <div id="notification-container" class="fixed top-4 right-4 z-[110] pointer-events-none"></div>
-
-            <section id="tab-dashboard" class="tab-content p-8 overflow-y-auto">
-                <div class="mb-8">
-                    <h2 class="text-3xl font-extrabold text-gray-900" id="welcome-msg">Halo, Selamat Datang</h2>
-                    <p class="text-gray-500">Pilih modul pembelajaran di bawah.</p>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div onclick="switchTab('absensi')" class="bg-blue-50 p-6 rounded-2xl border border-blue-100 cursor-pointer hover:shadow-lg transition-all">
-                        <i data-lucide="clipboard-list" class="mb-4 text-blue-600"></i>
-                        <h3 class="font-bold text-blue-900">Absensi Siswa</h3>
-                    </div>
-                    <div onclick="switchTab('nilai')" class="bg-purple-50 p-6 rounded-2xl border border-purple-100 cursor-pointer hover:shadow-lg transition-all">
-                        <i data-lucide="award" class="mb-4 text-purple-600"></i>
-                        <h3 class="font-bold text-purple-900">Input Nilai</h3>
-                    </div>
-                    <div onclick="switchTab('jurnal')" class="bg-emerald-50 p-6 rounded-2xl border border-emerald-100 cursor-pointer hover:shadow-lg transition-all">
-                        <i data-lucide="book-open" class="mb-4 text-emerald-600"></i>
-                        <h3 class="font-bold text-emerald-900">Jurnal Guru</h3>
-                    </div>
-                </div>
-            </section>
-
-            <section id="tab-absensi" class="tab-content p-8 overflow-y-auto hidden-tab">
-                <div class="glass-panel p-6 rounded-xl shadow-sm border mb-6">
-                    <h2 class="text-xl font-bold text-blue-800 mb-4 flex items-center"><i data-lucide="clipboard-list" class="mr-2"></i> Input Kehadiran</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <select id="absensi-kelas" onchange="loadSiswaAbsensi()" class="p-3 rounded-lg border w-full bg-white outline-none"><option value="">-- Pilih Kelas --</option></select>
-                        <select id="absensi-mapel" class="p-3 rounded-lg border w-full bg-white outline-none"><option value="">-- Pilih Mapel --</option></select>
-                    </div>
-                     <div class="mt-4">
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Jam Pelajaran:</label>
-                        <div class="flex flex-wrap gap-2">
-                            <input type="checkbox" id="jam-1" value="1" class="hidden jam-checkbox">
-                            <label for="jam-1" class="px-4 py-2 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">1</label>
-
-                            <input type="checkbox" id="jam-2" value="2" class="hidden jam-checkbox">
-                            <label for="jam-2" class="px-4 py-2 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">2</label>
-
-                            <input type="checkbox" id="jam-3" value="3" class="hidden jam-checkbox">
-                            <label for="jam-3" class="px-4 py-2 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">3</label>
-
-                            <input type="checkbox" id="jam-4" value="4" class="hidden jam-checkbox">
-                            <label for="jam-4" class="px-4 py-2 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">4</label>
-
-                            <input type="checkbox" id="jam-5" value="5" class="hidden jam-checkbox">
-                            <label for="jam-5" class="px-4 py-2 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">5</label>
-
-                            <input type="checkbox" id="jam-6" value="6" class="hidden jam-checkbox">
-                            <label for="jam-6" class="px-4 py-2 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">6</label>
-
-
-                            <input type="checkbox" id="jam-7" value="7" class="hidden jam-checkbox">
-                            <label for="jam-7" class="px-4 py-2 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">7</label>
-
-
-                            <input type="checkbox" id="jam-8" value="8" class="hidden jam-checkbox">
-                            <label for="jam-8" class="px-4 py-2 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">8</label>
-                        </div>
-                    </div>
-                    <input type="text" id="absensi-materi" placeholder="Ketik materi hari ini..." class="w-full p-3 rounded-lg border mt-4 outline-none focus:ring-2 ring-blue-300">
-                </div>
-                <div id="absensi-list" class="space-y-3 pb-24"></div>
-            </section>
-
-            <section id="tab-nilai" class="tab-content p-8 overflow-y-auto hidden-tab">
-                <div class="glass-panel p-6 rounded-xl shadow-sm border border-purple-100 mb-6">
-                    <h2 class="text-xl font-bold text-purple-800 mb-4 flex items-center"><i data-lucide="award" class="mr-2"></i> Input Nilai Ujian</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <select id="nilai-kelas" onchange="loadSiswaNilai()" class="p-3 rounded-lg border bg-white outline-none"><option value="">- Kelas -</option></select>
-                        <select id="nilai-mapel" class="p-3 rounded-lg border bg-white outline-none"><option value="">- Mapel -</option></select>
-                        <select id="nilai-ujian" class="p-3 rounded-lg border bg-white outline-none">
-                            <option value="">- Jenis Ujian -</option>
-                        </select>
-                    </div>
-                </div>
-                <div id="nilai-list" class="space-y-3 pb-24"></div>
-            </section>
-
-            <section id="tab-jurnal" class="tab-content p-8 overflow-y-auto hidden-tab">
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-emerald-100 mb-6">
-                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-                        <h2 class="text-xl font-bold text-emerald-800">Riwayat Jurnal Mengajar</h2>
-                        <button onclick="fetchJurnalData()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm flex items-center transition-colors">
-                            <i data-lucide="refresh-cw" class="mr-2 w-4 h-4"></i> Segarkan Data
-                        </button>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 bg-emerald-50 p-4 rounded-lg">
-                        <div>
-                            <label class="block text-xs font-bold text-emerald-700 uppercase mb-1">Filter Kelas</label>
-                            <select id="filter-jurnal-kelas" onchange="renderJurnalTable()" class="p-3 rounded-lg border w-full bg-white outline-none">
-                                <option value="">-- Semua Kelas --</option>
+            <!-- KONTEN TAB 1: ABSENSI -->
+            <div id="content-absensi" class="space-y-4">
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+                    <!-- Filter Atas -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        <div class="w-full">
+                            <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Pilih Kelas</label>
+                            <!-- REVISI: Teks default diubah -->
+                            <select id="absensiKelas" onchange="loadAbsensiList()" class="w-full p-2.5 border rounded-lg bg-gray-50 focus:bg-white transition-colors truncate">
+                                <option value="">-- Pilih Kelas --</option>
                             </select>
                         </div>
-                        <div>
-                            <label class="block text-xs font-bold text-emerald-700 uppercase mb-1">Filter Mapel</label>
-                            <select id="filter-jurnal-mapel" onchange="renderJurnalTable()" class="p-3 rounded-lg border w-full bg-white outline-none">
-                                <option value="">-- Semua Mapel --</option>
+                        <div class="w-full">
+                            <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Mata Pelajaran</label>
+                            <select id="absensiMapel" class="w-full p-2.5 border rounded-lg bg-gray-50 focus:bg-white truncate">
+                                <option value="">-- Pilih Mapel --</option>
                             </select>
                         </div>
                     </div>
 
-                    <div id="jurnal-container" class="overflow-x-auto rounded-lg border">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-emerald-50">
+                    <!-- Input Umum -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 pt-4 border-t border-dashed">
+                        <div class="md:col-span-2">
+                            <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Materi Pembelajaran</label>
+                            <input type="text" id="absensiMateri" placeholder="Contoh: Aljabar Linear" class="w-full p-2 border rounded-lg">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Jam Ke-</label>
+                            <input type="text" id="absensiJam" placeholder="1 - 2" class="w-full p-2 border rounded-lg">
+                        </div>
+                    </div>
+
+                    <!-- Daftar Siswa -->
+                    <div id="absensi-list-container" class="hidden">
+                        <h3 class="font-bold text-gray-700 mb-3 flex items-center gap-2">
+                            <i data-lucide="users" class="w-4 h-4"></i> Daftar Siswa
+                        </h3>
+                        <div class="overflow-x-auto rounded-lg border border-gray-200">
+                            <table class="w-full text-sm text-left">
+                                <thead class="bg-gray-50 text-gray-600 uppercase text-xs">
+                                    <tr>
+                                        <th class="p-3 w-10">No</th>
+                                        <th class="p-3">Nama Siswa</th>
+                                        <th class="p-3 text-center">Kehadiran</th>
+                                        <th class="p-3 w-24">Nilai Harian</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-absensi" class="divide-y divide-gray-100 bg-white"></tbody>
+                            </table>
+                        </div>
+                        <div class="mt-6 text-right">
+                            <button onclick="submitBatchAbsensi()" id="btnSubmitAbsensi" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-6 rounded-lg shadow-lg shadow-blue-200 transition-all flex items-center gap-2 ml-auto w-full md:w-auto justify-center">
+                                <i data-lucide="save" class="w-4 h-4"></i> Simpan Absensi
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="absensi-placeholder" class="text-center py-10 text-gray-400">
+                        <i data-lucide="arrow-up" class="w-8 h-8 mx-auto mb-2 opacity-50"></i>
+                        <p>Silakan pilih Kelas terlebih dahulu.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KONTEN TAB 2: NILAI -->
+            <div id="content-nilai" class="hidden space-y-4">
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div class="w-full">
+                            <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Pilih Kelas</label>
+                            <!-- REVISI: Teks default diubah -->
+                            <select id="nilaiKelas" onchange="loadNilaiList()" class="w-full p-2.5 border rounded-lg bg-gray-50 focus:bg-white transition-colors truncate">
+                                <option value="">-- Pilih Kelas --</option>
+                            </select>
+                        </div>
+                        <div class="w-full">
+                            <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Mata Pelajaran</label>
+                            <select id="nilaiMapel" class="w-full p-2.5 border rounded-lg bg-gray-50 focus:bg-white truncate">
+                                <option value="">-- Pilih Mapel --</option>
+                            </select>
+                        </div>
+                        <div class="w-full">
+                            <label class="block text-xs font-semibold text-gray-500 uppercase mb-1">Jenis Ujian</label>
+                            <select id="nilaiJenis" onchange="loadNilaiList()" class="w-full p-2.5 border rounded-lg bg-gray-50 focus:bg-white transition-colors truncate">
+                                <option value="">-- Pilih Jenis --</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="nilai-list-container" class="hidden">
+                        <h3 class="font-bold text-gray-700 mb-3 flex items-center gap-2">
+                            <i data-lucide="edit-3" class="w-4 h-4"></i> Input Nilai Siswa
+                        </h3>
+                        <div class="overflow-x-auto rounded-lg border border-gray-200">
+                            <table class="w-full text-sm text-left">
+                                <thead class="bg-gray-50 text-gray-600 uppercase text-xs">
+                                    <tr>
+                                        <th class="p-3 w-10">No</th>
+                                        <th class="p-3">Nama Siswa</th>
+                                        <th class="p-3 text-center w-40">Nilai</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tbody-nilai" class="divide-y divide-gray-100 bg-white"></tbody>
+                            </table>
+                        </div>
+                        <div class="mt-6 text-right">
+                            <button onclick="submitBatchNilai()" id="btnSubmitNilai" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-6 rounded-lg shadow-lg shadow-indigo-200 transition-all flex items-center gap-2 ml-auto w-full md:w-auto justify-center">
+                                <i data-lucide="save" class="w-4 h-4"></i> Simpan Nilai
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="nilai-placeholder" class="text-center py-10 text-gray-400">
+                        <i data-lucide="bar-chart-2" class="w-8 h-8 mx-auto mb-2 opacity-50"></i>
+                        <p>Pilih Kelas dan Jenis Ujian untuk menampilkan siswa.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KONTEN TAB 3: JURNAL -->
+            <div id="content-jurnal" class="hidden space-y-4">
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+                    <div class="flex flex-col md:flex-row justify-between items-end md:items-center gap-4 mb-6">
+                        <h3 class="font-bold text-lg text-gray-700">Riwayat Jurnal</h3>
+                        <div class="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+                            <!-- REVISI: Teks default diubah -->
+                            <select id="filterKelasJurnal" onchange="renderJurnalTable()" class="p-2 border rounded-lg text-sm bg-gray-50 flex-1 truncate w-full">
+                                <option value="">-- Pilih Kelas --</option>
+                            </select>
+                            <select id="filterMapelJurnal" onchange="renderJurnalTable()" class="p-2 border rounded-lg text-sm bg-gray-50 flex-1 truncate w-full">
+                                <option value="">Semua Mapel</option>
+                            </select>
+                            <button onclick="fetchData()" class="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-gray-600 w-full sm:w-auto flex justify-center" title="Refresh">
+                                <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto rounded-lg border border-gray-200">
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-gray-50 text-gray-600 uppercase text-xs">
                                 <tr>
-                                    <th class="p-4 text-left text-xs font-bold text-emerald-700 uppercase">Tanggal</th>
-                                    <th class="p-4 text-left text-xs font-bold text-emerald-700 uppercase">Kelas</th>
-                                    <th class="p-4 text-left text-xs font-bold text-emerald-700 uppercase">Mapel</th>
-                                    <th class="p-4 text-left text-xs font-bold text-emerald-700 uppercase">Materi</th>
+                                    <th class="p-3">Tanggal</th>
+                                    <th class="p-3">Kelas</th>
+                                    <th class="p-3">Mapel</th>
+                                    <th class="p-3">Materi</th>
+                                    <th class="p-3 text-center">Jam Ke</th>
+                                    <!-- Kolom Aksi DIHAPUS sesuai request -->
                                 </tr>
                             </thead>
-                            <tbody id="jurnal-table-body" class="bg-white divide-y divide-gray-100"></tbody>
+                            <tbody id="jurnal-table-body" class="divide-y divide-gray-100"></tbody>
                         </table>
                     </div>
                 </div>
-            </section>
-
-
-            <div id="global-loader" class="absolute inset-0 bg-white/80 flex items-center justify-center z-50 hidden">
-                <div class="loader mr-3"></div> <span class="text-blue-600 font-bold">Sinkronisasi...</span>
             </div>
+
         </main>
+
+        <div id="global-loader" class="fixed inset-0 bg-white/60 z-50 hidden flex items-center justify-center backdrop-blur-sm">
+            <div class="bg-white p-4 rounded-xl shadow-xl flex items-center gap-3 border">
+                <div class="loader"></div> <span class="font-medium text-gray-600">Menghubungkan...</span>
+            </div>
+        </div>
+        <div id="notification-container" class="fixed bottom-4 right-4 z-[60] flex flex-col gap-2"></div>
+
     </div>
 
     <script src="config.js"></script>
     <script src="script.js"></script>
-
 </body>
 </html>
