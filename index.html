@@ -10,8 +10,9 @@
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <link rel="stylesheet" href="style.css">
 </head>
-<body class="bg-gray-50">
+<body class="bg-gray-50 font-sans">
 
+    <!-- Auth Overlay -->
     <div id="auth-overlay" class="fixed inset-0 bg-gray-900/90 z-[100] flex items-center justify-center p-4">
         <div class="bg-white p-8 rounded-2xl shadow-2xl max-w-sm w-full text-center">
             <div class="bg-blue-600 w-16 h-16 rounded-full flex items-center justify-center text-white mx-auto mb-4">
@@ -25,154 +26,238 @@
 
     <div id="main-app" class="min-h-screen flex flex-col md:flex-row max-w-7xl mx-auto shadow-2xl overflow-hidden bg-white blur-sm pointer-events-none transition-all duration-500">
 
+        <!-- SIDEBAR -->
         <aside class="md:w-64 bg-white border-r border-gray-200 flex flex-col z-10">
             <div class="p-6 border-b border-gray-100 flex items-center space-x-3">
-                <div class="bg-blue-600 text-white p-2 rounded-lg">
+                <div class="bg-blue-600 text-white p-2 rounded-lg shadow-blue-200 shadow-lg">
                     <i data-lucide="graduation-cap"></i>
                 </div>
                 <h1 class="font-bold text-gray-800 text-lg leading-tight">Admin<br/><span class="text-blue-600">Sekolah</span></h1>
             </div>
-            
+
             <nav class="flex-1 p-4 space-y-2 overflow-y-auto" id="nav-menu">
-                <button onclick="switchTab('dashboard')" class="nav-btn w-full flex items-center p-3 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors active-tab-btn" data-tab="dashboard">
+                <button onclick="switchTab('dashboard')" class="nav-btn w-full flex items-center p-3 rounded-lg text-gray-600 hover:bg-blue-50 hover:text-blue-700 transition-colors active-tab-btn" data-tab="dashboard">
                     <i data-lucide="layout-dashboard" class="mr-3 w-5 h-5"></i> Dashboard
                 </button>
                 <div class="pt-4 pb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider pl-3">Menu Utama</div>
-                <button onclick="switchTab('absensi')" class="nav-btn w-full flex items-center p-3 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors" data-tab="absensi">
+                <button onclick="switchTab('absensi')" class="nav-btn w-full flex items-center p-3 rounded-lg text-gray-600 hover:bg-blue-50 hover:text-blue-700 transition-colors" data-tab="absensi">
                     <i data-lucide="clipboard-list" class="mr-3 w-5 h-5"></i> Absensi
                 </button>
-                <button onclick="switchTab('nilai')" class="nav-btn w-full flex items-center p-3 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors" data-tab="nilai">
-                    <i data-lucide="award" class="mr-3 w-5 h-5"></i> Nilai
+                <button onclick="switchTab('nilai')" class="nav-btn w-full flex items-center p-3 rounded-lg text-gray-600 hover:bg-blue-50 hover:text-blue-700 transition-colors" data-tab="nilai">
+                    <i data-lucide="award" class="mr-3 w-5 h-5"></i> Input Nilai
                 </button>
-                <button onclick="switchTab('jurnal')" class="nav-btn w-full flex items-center p-3 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors" data-tab="jurnal">
-                    <i data-lucide="book-open" class="mr-3 w-5 h-5"></i> Jurnal
+                <button onclick="switchTab('jurnal')" class="nav-btn w-full flex items-center p-3 rounded-lg text-gray-600 hover:bg-blue-50 hover:text-blue-700 transition-colors" data-tab="jurnal">
+                    <i data-lucide="book-open" class="mr-3 w-5 h-5"></i> Jurnal Guru
+                </button>
+                <button onclick="window.location.href='laporan.html'" class="nav-btn w-full flex items-center p-3 rounded-lg text-gray-600 hover:bg-blue-50 hover:text-blue-700 transition-colors">
+                <i data-lucide="file-text" class="mr-3 w-5 h-5"></i> Laporan
                 </button>
             </nav>
 
-            <div class="p-4 border-t border-gray-200">
+            <div class="p-4 border-t border-gray-200 bg-gray-50">
                 <div class="flex items-center space-x-3 text-sm text-gray-600">
-                    <img id="user-photo" src="" class="w-8 h-8 rounded-full bg-gray-200 border border-gray-100 hidden">
+                    <img id="user-photo" src="" class="w-8 h-8 rounded-full bg-white border border-gray-200 hidden">
                     <div class="flex flex-col truncate">
-                        <span id="user-name" class="font-bold text-gray-800 truncate">Nama Guru</span>
-                        <span id="user-display" class="text-[10px] text-gray-400 truncate">Gmail@gmail.com</span>
+                        <span id="user-name" class="font-bold text-gray-800 truncate">Pengguna</span>
+                        <span id="user-display" class="text-[10px] text-gray-500 truncate">user@email.com</span>
                     </div>
                 </div>
-                <button onclick="logout()" class="mt-3 w-full text-xs text-red-500 bg-red-50 hover:bg-red-100 py-2 rounded-lg font-medium transition-colors">Log Out</button>
+                <button onclick="logout()" class="mt-3 w-full text-xs text-red-600 bg-red-50 hover:bg-red-100 py-2 rounded-lg font-medium transition-colors border border-red-100">Log Out</button>
             </div>
         </aside>
 
-        <main class="flex-1 flex flex-col h-screen overflow-hidden relative">
-            <div id="notification-container" class="fixed top-4 right-4 z-[110] pointer-events-none"></div>
+        <!-- MAIN CONTENT -->
+        <main class="flex-1 flex flex-col h-screen overflow-hidden relative bg-gray-50">
+            <div id="notification-container" class="fixed top-4 right-4 z-[110] pointer-events-none flex flex-col gap-2"></div>
 
-            <section id="tab-dashboard" class="tab-content p-8 overflow-y-auto">
-                <div class="mb-8">
-                    <h2 class="text-3xl font-extrabold text-gray-900" id="welcome-msg">Halo, Selamat Datang</h2>
-                    <p class="text-gray-500">Pilih modul pembelajaran di bawah.</p>
+            <!-- TAB DASHBOARD -->
+            <section id="tab-dashboard" class="tab-content p-6 md:p-8 overflow-y-auto w-full">
+                <div class="mb-8 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                    <h2 class="text-3xl font-extrabold text-gray-800" id="welcome-msg">Selamat Datang</h2>
+                    <p class="text-gray-500 mt-1">Silakan pilih menu di sebelah kiri atau pintasan di bawah ini.</p>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div onclick="switchTab('absensi')" class="bg-blue-50 p-6 rounded-2xl border border-blue-100 cursor-pointer hover:shadow-lg transition-all">
-                        <i data-lucide="clipboard-list" class="mb-4 text-blue-600"></i>
-                        <h3 class="font-bold text-blue-900">Absensi Siswa</h3>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <div onclick="switchTab('absensi')" class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm cursor-pointer hover:shadow-md hover:border-blue-300 transition-all group">
+                        <div class="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                            <i data-lucide="clipboard-list" class="text-blue-600 w-6 h-6"></i>
+                        </div>
+                        <h3 class="font-bold text-gray-800 text-lg">Absensi Siswa</h3>
+                        <p class="text-sm text-gray-400 mt-1">Catat kehadiran</p>
                     </div>
-                    <div onclick="switchTab('nilai')" class="bg-purple-50 p-6 rounded-2xl border border-purple-100 cursor-pointer hover:shadow-lg transition-all">
-                        <i data-lucide="award" class="mb-4 text-purple-600"></i>
-                        <h3 class="font-bold text-purple-900">Input Nilai</h3>
+
+                    <div onclick="switchTab('nilai')" class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm cursor-pointer hover:shadow-md hover:border-emerald-300 transition-all group">
+                        <div class="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                            <i data-lucide="award" class="text-emerald-600 w-6 h-6"></i>
+                        </div>
+                        <h3 class="font-bold text-gray-800 text-lg">Input Nilai</h3>
+                        <p class="text-sm text-gray-400 mt-1">Kelola nilai ujian</p>
                     </div>
-                    <div onclick="switchTab('jurnal')" class="bg-emerald-50 p-6 rounded-2xl border border-emerald-100 cursor-pointer hover:shadow-lg transition-all">
-                        <i data-lucide="book-open" class="mb-4 text-emerald-600"></i>
-                        <h3 class="font-bold text-emerald-900">Jurnal Guru</h3>
+
+                    <div onclick="switchTab('jurnal')" class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm cursor-pointer hover:shadow-md hover:border-amber-300 transition-all group">
+                        <div class="w-12 h-12 bg-amber-50 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                            <i data-lucide="book-open" class="text-amber-600 w-6 h-6"></i>
+                        </div>
+                        <h3 class="font-bold text-gray-800 text-lg">Jurnal Guru</h3>
+                        <p class="text-sm text-gray-400 mt-1">Riwayat mengajar</p>
                     </div>
+
+                    <a href="laporan.html" class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm cursor-pointer hover:shadow-md hover:border-purple-300 transition-all group block">
+                        <div class="w-12 h-12 bg-purple-50 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                            <i data-lucide="file-bar-chart" class="text-purple-600 w-6 h-6"></i>
+                        </div>
+                        <h3 class="font-bold text-gray-800 text-lg">Laporan</h3>
+                        <p class="text-sm text-gray-400 mt-1">Rekapitulasi data</p>
+                    </a>
                 </div>
             </section>
 
-            <section id="tab-absensi" class="tab-content p-8 overflow-y-auto hidden-tab">
-                <div class="glass-panel p-6 rounded-xl shadow-sm border mb-6">
-                    <h2 class="text-xl font-bold text-blue-800 mb-4 flex items-center"><i data-lucide="clipboard-list" class="mr-2"></i> Input Kehadiran</h2>
+            <!-- TAB ABSENSI -->
+            <section id="tab-absensi" class="tab-content p-6 md:p-8 overflow-y-auto hidden-tab w-full">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 mb-6">
+                    <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center"><i data-lucide="clipboard-list" class="mr-2 text-blue-600"></i> Absensi Harian</h2>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <select id="absensi-kelas" onchange="loadSiswaAbsensi()" class="p-3 rounded-lg border w-full bg-white outline-none"><option value="">-- Pilih Kelas --</option></select>
-                        <select id="absensi-mapel" class="p-3 rounded-lg border w-full bg-white outline-none"><option value="">-- Pilih Mapel --</option></select>
-                    </div>
-                     <div class="mt-4">
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Jam Pelajaran:</label>
-                        <div class="flex flex-wrap gap-2">
-                            <input type="checkbox" id="jam-1" value="1" class="hidden jam-checkbox">
-                            <label for="jam-1" class="px-4 py-2 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">1</label>
-
-                            <input type="checkbox" id="jam-2" value="2" class="hidden jam-checkbox">
-                            <label for="jam-2" class="px-4 py-2 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">2</label>
-
-                            <input type="checkbox" id="jam-3" value="3" class="hidden jam-checkbox">
-                            <label for="jam-3" class="px-4 py-2 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">3</label>
-
-                            <input type="checkbox" id="jam-4" value="4" class="hidden jam-checkbox">
-                            <label for="jam-4" class="px-4 py-2 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">4</label>
-
-                            <input type="checkbox" id="jam-5" value="5" class="hidden jam-checkbox">
-                            <label for="jam-5" class="px-4 py-2 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">5</label>
-
-                            <input type="checkbox" id="jam-6" value="6" class="hidden jam-checkbox">
-                            <label for="jam-6" class="px-4 py-2 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">6</label>
-
-
-                            <input type="checkbox" id="jam-7" value="7" class="hidden jam-checkbox">
-                            <label for="jam-7" class="px-4 py-2 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">7</label>
-
-
-                            <input type="checkbox" id="jam-8" value="8" class="hidden jam-checkbox">
-                            <label for="jam-8" class="px-4 py-2 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">8</label>
+                        <div>
+                            <label class="text-xs font-bold text-gray-500 uppercase">Kelas</label>
+                            <select id="absensi-kelas" onchange="loadSiswaAbsensi()" class="mt-1 p-3 rounded-lg border border-gray-200 w-full bg-gray-50 focus:bg-white outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                                <option value="">-- Pilih Kelas --</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold text-gray-500 uppercase">Mata Pelajaran</label>
+                            <select id="absensi-mapel" class="mt-1 p-3 rounded-lg border border-gray-200 w-full bg-gray-50 focus:bg-white outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                                <option value="">-- Pilih Mapel --</option>
+                            </select>
                         </div>
                     </div>
-                    <input type="text" id="absensi-materi" placeholder="Ketik materi hari ini..." class="w-full p-3 rounded-lg border mt-4 outline-none focus:ring-2 ring-blue-300">
+                     <div class="mt-4">
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Jam Pelajaran</label>
+                        <div class="flex flex-wrap gap-2">
+                            <label class="cursor-pointer"><input type="checkbox" class="jam-checkbox peer sr-only" value="1"><span class="w-10 h-10 flex items-center justify-center border rounded-lg peer-checked:bg-blue-600 peer-checked:text-white transition-all text-sm font-bold hover:bg-gray-50">1</span></label>
+                            <label class="cursor-pointer"><input type="checkbox" class="jam-checkbox peer sr-only" value="2"><span class="w-10 h-10 flex items-center justify-center border rounded-lg peer-checked:bg-blue-600 peer-checked:text-white transition-all text-sm font-bold hover:bg-gray-50">2</span></label>
+                            <label class="cursor-pointer"><input type="checkbox" class="jam-checkbox peer sr-only" value="3"><span class="w-10 h-10 flex items-center justify-center border rounded-lg peer-checked:bg-blue-600 peer-checked:text-white transition-all text-sm font-bold hover:bg-gray-50">3</span></label>
+                            <label class="cursor-pointer"><input type="checkbox" class="jam-checkbox peer sr-only" value="4"><span class="w-10 h-10 flex items-center justify-center border rounded-lg peer-checked:bg-blue-600 peer-checked:text-white transition-all text-sm font-bold hover:bg-gray-50">4</span></label>
+                            <label class="cursor-pointer"><input type="checkbox" class="jam-checkbox peer sr-only" value="5"><span class="w-10 h-10 flex items-center justify-center border rounded-lg peer-checked:bg-blue-600 peer-checked:text-white transition-all text-sm font-bold hover:bg-gray-50">5</span></label>
+                            <label class="cursor-pointer"><input type="checkbox" class="jam-checkbox peer sr-only" value="6"><span class="w-10 h-10 flex items-center justify-center border rounded-lg peer-checked:bg-blue-600 peer-checked:text-white transition-all text-sm font-bold hover:bg-gray-50">6</span></label>
+                            <label class="cursor-pointer"><input type="checkbox" class="jam-checkbox peer sr-only" value="7"><span class="w-10 h-10 flex items-center justify-center border rounded-lg peer-checked:bg-blue-600 peer-checked:text-white transition-all text-sm font-bold hover:bg-gray-50">7</span></label>
+                            <label class="cursor-pointer"><input type="checkbox" class="jam-checkbox peer sr-only" value="8"><span class="w-10 h-10 flex items-center justify-center border rounded-lg peer-checked:bg-blue-600 peer-checked:text-white transition-all text-sm font-bold hover:bg-gray-50">8</span></label>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <label class="text-xs font-bold text-gray-500 uppercase">Materi Pembelajaran</label>
+                        <input type="text" id="absensi-materi" placeholder="Contoh: Bab 1 Pendahuluan..." class="mt-1 w-full p-3 rounded-lg border border-gray-200 bg-gray-50 focus:bg-white outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                    </div>
+
+                    <div class="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
+                        <span class="text-sm font-bold text-gray-600">Set Nilai Harian Otomatis:</span>
+                        <select onchange="applyDefaultNilaiAbsensi(this.value); this.value='';" class="text-sm border-blue-300 border bg-blue-50 text-blue-700 font-bold rounded-lg p-2 cursor-pointer hover:bg-blue-100">
+                            <option value="">-- Pilih Nilai --</option>
+                            <option value="100">100 (Sempurna)</option>
+                            <option value="90">90 (Sangat Baik)</option>
+                            <option value="80">80 (Baik)</option>
+                            <option value="70">70 (Cukup)</option>
+                            <option value="50">50 (Kurang)</option>
+                            <option value="0">0 (Nol)</option>
+                        </select>
+                    </div>
                 </div>
                 <div id="absensi-list" class="space-y-3 pb-24"></div>
             </section>
 
-            <section id="tab-nilai" class="tab-content p-8 overflow-y-auto hidden-tab">
-                <div class="glass-panel p-6 rounded-xl shadow-sm border border-purple-100 mb-6">
-                    <h2 class="text-xl font-bold text-purple-800 mb-4 flex items-center"><i data-lucide="award" class="mr-2"></i> Input Nilai Ujian</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <select id="nilai-kelas" onchange="loadSiswaNilai()" class="p-3 rounded-lg border bg-white outline-none"><option value="">- Kelas -</option></select>
-                        <select id="nilai-mapel" class="p-3 rounded-lg border bg-white outline-none"><option value="">- Mapel -</option></select>
-                        <select id="nilai-ujian" class="p-3 rounded-lg border bg-white outline-none">
-                            <option value="">- Jenis Ujian -</option>
-                        </select>
+            <!-- TAB NILAI -->
+            <section id="tab-nilai" class="tab-content p-6 md:p-8 overflow-y-auto hidden-tab w-full">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800">Input Nilai Siswa</h2>
+                        <p class="text-gray-500 text-sm">Masukkan nilai ujian secara manual</p>
+                    </div>
+                    <!-- Tombol Simpan Dihapus dari Sini -->
+                </div>
+
+                <!-- Filter Card -->
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Kelas</label>
+                            <select id="nilai-kelas" onchange="loadSiswaNilai()" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all">
+                                <option value="">-- Pilih Kelas --</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Mata Pelajaran</label>
+                            <select id="nilai-mapel" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all">
+                                <option value="">-- Pilih Mapel --</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Jenis Ujian</label>
+                            <select id="nilai-ujian" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none transition-all">
+                                <option value="">-- Pilih Jenis --</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
-                <div id="nilai-list" class="space-y-3 pb-24"></div>
+
+                <!-- Table Card (Awalnya Hidden) -->
+                <div id="nilai-table-card" class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="bg-emerald-50 border-b border-emerald-100">
+                                <tr>
+                                    <th class="p-4 text-xs font-bold text-emerald-800 uppercase w-16 text-center">No</th>
+                                    <th class="p-4 text-xs font-bold text-emerald-800 uppercase">Nama Siswa</th>
+                                    <!-- Kolom NISN Dihapus -->
+                                    <!-- Header Nilai Rapih dan Center -->
+                                    <th class="p-4 text-xs font-bold text-emerald-800 uppercase text-center w-40">NILAI</th>
+                                </tr>
+                            </thead>
+                            <tbody id="nilai-list-container" class="divide-y divide-gray-100 bg-white">
+                                <!-- Data Row -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Tombol Simpan Dipindahkan ke Sini (Footer Tabel) -->
+                    <div class="p-4 bg-gray-50 border-t border-gray-100 flex justify-end">
+                        <button onclick="saveNilai()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 rounded-xl font-medium shadow-lg shadow-emerald-200 active:scale-95 transition-all flex items-center gap-2">
+                            <i data-lucide="save"></i> Simpan Data Nilai
+                        </button>
+                    </div>
+                </div>
             </section>
 
-            <section id="tab-jurnal" class="tab-content p-8 overflow-y-auto hidden-tab">
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-emerald-100 mb-6">
+            <!-- TAB JURNAL -->
+            <section id="tab-jurnal" class="tab-content p-6 md:p-8 overflow-y-auto hidden-tab w-full">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 mb-6">
                     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-                        <h2 class="text-xl font-bold text-emerald-800">Riwayat Jurnal Mengajar</h2>
-                        <button onclick="fetchJurnalData()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm flex items-center transition-colors">
-                            <i data-lucide="refresh-cw" class="mr-2 w-4 h-4"></i> Segarkan Data
+                        <h2 class="text-xl font-bold text-gray-800 flex items-center"><i data-lucide="book-open" class="mr-2 text-amber-600"></i> Riwayat Jurnal</h2>
+                        <button onclick="fetchJurnalData()" class="bg-amber-100 hover:bg-amber-200 text-amber-800 px-4 py-2 rounded-lg text-sm flex items-center transition-colors font-medium">
+                            <i data-lucide="refresh-cw" class="mr-2 w-4 h-4"></i> Refresh Data
                         </button>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 bg-emerald-50 p-4 rounded-lg">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 bg-amber-50/50 p-4 rounded-xl border border-amber-100">
                         <div>
-                            <label class="block text-xs font-bold text-emerald-700 uppercase mb-1">Filter Kelas</label>
-                            <select id="filter-jurnal-kelas" onchange="renderJurnalTable()" class="p-3 rounded-lg border w-full bg-white outline-none">
-                                <option value="">-- Semua Kelas --</option>
+                            <label class="block text-xs font-bold text-amber-800 uppercase mb-1">Filter Kelas</label>
+                            <select id="filter-jurnal-kelas" onchange="renderJurnalTable()" class="p-2.5 rounded-lg border border-amber-200 w-full bg-white outline-none focus:ring-2 focus:ring-amber-500">
+                                <option value="">Semua Kelas</option>
                             </select>
                         </div>
                         <div>
-                            <label class="block text-xs font-bold text-emerald-700 uppercase mb-1">Filter Mapel</label>
-                            <select id="filter-jurnal-mapel" onchange="renderJurnalTable()" class="p-3 rounded-lg border w-full bg-white outline-none">
-                                <option value="">-- Semua Mapel --</option>
+                            <label class="block text-xs font-bold text-amber-800 uppercase mb-1">Filter Mapel</label>
+                            <select id="filter-jurnal-mapel" onchange="renderJurnalTable()" class="p-2.5 rounded-lg border border-amber-200 w-full bg-white outline-none focus:ring-2 focus:ring-amber-500">
+                                <option value="">Semua Mapel</option>
                             </select>
                         </div>
                     </div>
 
-                    <div id="jurnal-container" class="overflow-x-auto rounded-lg border">
+                    <div id="jurnal-container" class="overflow-x-auto rounded-xl border border-gray-200">
                         <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-emerald-50">
+                            <thead class="bg-amber-50">
                                 <tr>
-                                    <th class="p-4 text-left text-xs font-bold text-emerald-700 uppercase">Tanggal</th>
-                                    <th class="p-4 text-left text-xs font-bold text-emerald-700 uppercase">Kelas</th>
-                                    <th class="p-4 text-left text-xs font-bold text-emerald-700 uppercase">Mapel</th>
-                                    <th class="p-4 text-left text-xs font-bold text-emerald-700 uppercase">Materi</th>
+                                    <th class="p-4 text-left text-xs font-bold text-amber-800 uppercase">Tanggal</th>
+                                    <th class="p-4 text-left text-xs font-bold text-amber-800 uppercase">Kelas</th>
+                                    <th class="p-4 text-left text-xs font-bold text-amber-800 uppercase">Mapel</th>
+                                    <th class="p-4 text-left text-xs font-bold text-amber-800 uppercase">Materi</th>
                                 </tr>
                             </thead>
                             <tbody id="jurnal-table-body" class="bg-white divide-y divide-gray-100"></tbody>
@@ -181,9 +266,11 @@
                 </div>
             </section>
 
-
             <div id="global-loader" class="absolute inset-0 bg-white/80 flex items-center justify-center z-50 hidden">
-                <div class="loader mr-3"></div> <span class="text-blue-600 font-bold">Sinkronisasi...</span>
+                <div class="flex flex-col items-center">
+                    <div class="loader mb-2"></div>
+                    <span class="text-blue-600 font-bold animate-pulse">Memproses Data...</span>
+                </div>
             </div>
         </main>
     </div>

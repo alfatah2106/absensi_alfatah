@@ -50,7 +50,6 @@ async function fetchOptions() {
         const res = await fetch(`${GAS_API_URL}/api?action=get_options`);
         const data = await res.json();
 
-        // Data sudah terurut by ID dari server (index.ts)
         if (data.mapel) mapelOptions = data.mapel;
         if (data.ujian) ujianOptions = data.ujian;
         if (data.kelas) kelasOptions = data.kelas;
@@ -65,16 +64,16 @@ async function fetchOptions() {
 async function fetchData() {
     showLoader(true);
     try {
+        // PERBAIKAN: Hanya fetch database siswa, JURNAL DI-FETCH NANTI SAAT TAB DIBUKA
         const res = await fetch(`${GAS_API_URL}/api?action=get_db`);
         dbStudents = await res.json();
-        // Fallback populate jika options gagal/kosong, tapi dipanggil terpisah agar tidak race condition
+
         if(kelasOptions.length === 0) populateFilters();
     } catch (e) { showNotify('error', 'Gagal memuat data siswa.'); }
     finally { showLoader(false); }
 }
 
 function populateFilters() {
-    // 1. Populate Kelas (Server-Side Ordered)
     const kelasTargets = ['absensi-kelas', 'nilai-kelas', 'filter-jurnal-kelas'];
     kelasTargets.forEach(id => {
         const el = document.getElementById(id);
@@ -84,35 +83,29 @@ function populateFilters() {
 
             let sources = [];
             if (kelasOptions.length > 0) {
-                // Langsung map saja, urutan sudah dijamin oleh API (ORDER BY id ASC)
                 sources = kelasOptions.map(k => k.nama_kelas);
             } else {
-                // Fallback: Ambil dari data siswa jika tabel referensi kosong
                 sources = [...new Set(dbStudents.map(s => s.kelas))].filter(Boolean).sort();
             }
             sources.forEach(c => el.add(new Option(c, c)));
         }
     });
 
-    // 2. Populate Mapel (Server-Side Ordered)
     const mapelTargets = ['absensi-mapel', 'nilai-mapel', 'filter-jurnal-mapel'];
     mapelTargets.forEach(id => {
         const el = document.getElementById(id);
         if(el) {
             const firstOpt = el.options[0] ? el.options[0].text : "-- Pilih --";
             el.innerHTML = `<option value="">${firstOpt}</option>`;
-
-            // Langsung map, urutan sesuai ID dari server
             if (mapelOptions.length > 0) {
                 mapelOptions.forEach(m => el.add(new Option(m.nama_mapel, m.nama_mapel)));
             }
         }
     });
 
-    // 3. Populate Jenis Ujian (Server-Side Ordered)
     const examEl = document.getElementById('nilai-ujian');
     if (examEl) {
-        examEl.innerHTML = `<option value="">- Jenis Ujian -</option>`;
+        examEl.innerHTML = `<option value="">-- Pilih Jenis --</option>`;
         if (ujianOptions.length > 0) {
             ujianOptions.forEach(u => examEl.add(new Option(u.jenis_ujian, u.jenis_ujian)));
         }
@@ -126,7 +119,21 @@ function switchTab(tabId) {
         btn.classList.remove('active-tab-btn');
         if(btn.dataset.tab === tabId) btn.classList.add('active-tab-btn');
     });
+
+    // PERBAIKAN: Fetch Jurnal hanya jika tab dibuka
     if(tabId === 'jurnal') fetchJurnalData();
+    if(tabId === 'nilai') loadSiswaNilai();
+}
+
+// --- ABSENSI ---
+
+function applyDefaultNilaiAbsensi(val) {
+    if(!val) return;
+    document.querySelectorAll('.nilai-absensi-input').forEach(el => {
+        el.value = val;
+        el.parentElement.classList.add('ring-2', 'ring-blue-300');
+        setTimeout(() => el.parentElement.classList.remove('ring-2', 'ring-blue-300'), 500);
+    });
 }
 
 function loadSiswaAbsensi() {
@@ -135,26 +142,39 @@ function loadSiswaAbsensi() {
     if(!kelas) { container.innerHTML = ''; return; }
 
     const filtered = dbStudents.filter(s => s.kelas === kelas);
+    filtered.sort((a,b) => a.nama.localeCompare(b.nama));
 
     if (filtered.length === 0) {
-        container.innerHTML = '<div class="text-center p-4 text-gray-500">Tidak ada siswa di kelas ini.</div>';
+        container.innerHTML = '<div class="text-center p-4 text-gray-500 italic bg-gray-50 rounded-lg">Tidak ada siswa di kelas ini.</div>';
         return;
     }
 
-    container.innerHTML = filtered.map(s => `
-        <div class="bg-white p-4 rounded-lg shadow-sm border flex justify-between items-center" data-nisn="${s.nisn || ''}">
-            <div>
-                <div class="font-bold text-gray-800">${s.nama}</div>
-                <div class="text-xs text-gray-500">Kelas: ${s.kelas}</div>
+    container.innerHTML = filtered.map((s, idx) => `
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4 transition-all hover:border-blue-400" data-nisn="${s.nisn || ''}">
+            <div class="flex items-center gap-4 w-full md:w-auto">
+                <div class="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs border border-blue-100">${idx+1}</div>
+                <div>
+                    <div class="font-bold text-gray-800 nama-siswa">${s.nama}</div>
+                    <div class="text-xs text-gray-400 font-mono">${s.nisn}</div>
+                </div>
             </div>
-            <div class="flex space-x-2">
-                <select class="p-1 border rounded text-sm status-select bg-gray-50">
+
+            <div class="flex items-center gap-3 w-full md:w-auto justify-end">
+                <select class="status-select p-2 border border-gray-300 rounded-lg text-sm bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none w-24">
                     <option value="H">Hadir</option>
                     <option value="S">Sakit</option>
                     <option value="I">Izin</option>
                     <option value="A">Alpha</option>
                 </select>
-                <input type="number" value="100" class="w-16 p-1 border rounded text-center nilai-input focus:ring-1 ring-blue-400 outline-none">
+
+                <select class="nilai-absensi-input w-20 p-2 border border-gray-300 rounded-lg text-center font-bold text-gray-700 bg-white focus:ring-2 focus:ring-blue-500 outline-none">
+                    <option value="100" class="text-emerald-600">100</option>
+                    <option value="90" class="text-emerald-600">90</option>
+                    <option value="80" class="text-blue-600">80</option>
+                    <option value="70" class="text-amber-600">70</option>
+                    <option value="50" class="text-red-500">50</option>
+                    <option value="0" class="text-red-700">0</option>
+                </select>
             </div>
         </div>
     `).join('');
@@ -162,10 +182,11 @@ function loadSiswaAbsensi() {
     if (!document.getElementById('btn-save-absensi')) {
         const btn = document.createElement('button');
         btn.id = 'btn-save-absensi';
-        btn.className = "fixed bottom-6 right-6 bg-blue-600 text-white px-8 py-3 rounded-full shadow-xl font-bold hover:bg-blue-700 z-20 transition-transform active:scale-95";
-        btn.innerText = "Simpan Absensi";
+        btn.className = "fixed bottom-6 right-6 bg-blue-600 text-white px-8 py-3 rounded-full shadow-xl font-bold hover:bg-blue-700 z-20 transition-transform active:scale-95 flex items-center gap-2";
+        btn.innerHTML = `<i data-lucide="save"></i> Simpan Absensi`;
         btn.onclick = saveAbsensi;
         container.appendChild(btn);
+        lucide.createIcons();
     }
 }
 
@@ -185,14 +206,14 @@ async function saveAbsensi() {
 
     cards.forEach(card => {
         const nisn = card.dataset.nisn;
-        const nama = card.querySelector('.font-bold').innerText;
+        const nama = card.querySelector('.nama-siswa').innerText;
         const status = card.querySelector('.status-select').value;
-        const nilai = card.querySelector('.nilai-input').value;
+        const nilai = card.querySelector('.nilai-absensi-input').value;
 
         rows.push({
             nisn, nama,
             kehadiran: status,
-            nilaiHarian: nilai,
+            nilaiHarian: parseInt(nilai),
             materi: materi,
             jam: selectedJams.join(','),
             email: userEmail,
@@ -209,13 +230,13 @@ async function saveAbsensi() {
             body: JSON.stringify({ action: 'save_absensi', rows })
         });
         showNotify('success', 'Data absensi tersimpan!');
-        switchTab('dashboard');
 
+        document.getElementById('absensi-materi').value = '';
         document.getElementById('absensi-kelas').value = '';
         document.getElementById('absensi-mapel').value = '';
         document.getElementById('absensi-list').innerHTML = '';
-        document.getElementById('absensi-materi').value = '';
         document.querySelectorAll('.jam-checkbox').forEach(cb => cb.checked = false);
+
     } catch (e) {
         showNotify('error', 'Gagal menyimpan.');
     } finally {
@@ -223,47 +244,83 @@ async function saveAbsensi() {
     }
 }
 
+// --- LOGIC NILAI ---
+
 function loadSiswaNilai() {
     const kelas = document.getElementById('nilai-kelas').value;
-    const container = document.getElementById('nilai-list');
-    if(!kelas) { container.innerHTML = ''; return; }
+    const container = document.getElementById('nilai-list-container');
+    const tableCard = document.getElementById('nilai-table-card');
 
-    const filtered = dbStudents.filter(s => s.kelas === kelas);
-    if (filtered.length === 0) {
-        container.innerHTML = '<div class="text-center p-4 text-gray-500">Tidak ada siswa di kelas ini.</div>';
+    // PERBAIKAN: Sembunyikan card jika belum pilih kelas
+    if(!kelas) {
+        tableCard.classList.add('hidden');
+        container.innerHTML = '';
         return;
     }
 
-    container.innerHTML = filtered.map(s => `
-        <div class="bg-white p-4 rounded-xl shadow-sm border flex justify-between items-center" data-nisn="${s.nisn}">
-            <div class="font-bold text-gray-800">${s.nama}</div>
-            <input type="number" placeholder="Nilai" class="w-24 p-2 border rounded-lg text-center nilai-val outline-none focus:ring-2 ring-purple-300">
-        </div>
-    `).join('') + `<button onclick="saveNilai()" class="w-full mt-6 bg-purple-600 text-white py-4 rounded-xl font-bold">Simpan Nilai</button>`;
+    const filtered = dbStudents.filter(s => s.kelas === kelas);
+    filtered.sort((a, b) => a.nama.localeCompare(b.nama));
+
+    if (filtered.length === 0) {
+        tableCard.classList.remove('hidden');
+        container.innerHTML = '<tr><td colspan="3" class="p-10 text-center text-gray-400 italic">Tidak ada siswa di kelas ini.</td></tr>';
+        return;
+    }
+
+    // Tampilkan Card
+    tableCard.classList.remove('hidden');
+
+    // PERBAIKAN: Hapus kolom NISN di render
+    container.innerHTML = filtered.map((s, index) => `
+        <tr class="hover:bg-emerald-50/30 transition-colors group border-b border-gray-50 last:border-0" data-nisn="${s.nisn}">
+            <td class="p-4 text-center text-gray-500 font-medium">${index + 1}</td>
+            <td class="p-4">
+                <div class="font-bold text-gray-800 nama-siswa">${s.nama}</div>
+            </td>
+            <!-- Kolom NISN Dihapus -->
+            <td class="p-4 text-center">
+                <input
+                    type="number"
+                    class="nilai-val w-24 p-2.5 border border-gray-300 rounded-lg text-center font-bold text-gray-800 focus:ring-2 focus:ring-emerald-500 outline-none transition-all placeholder-gray-300 mx-auto block"
+                    placeholder="0"
+                    min="0"
+                    max="100"
+                >
+            </td>
+        </tr>
+    `).join('');
 }
 
 async function saveNilai() {
     const mapel = document.getElementById('nilai-mapel').value;
     const ujian = document.getElementById('nilai-ujian').value;
     const kelas = document.getElementById('nilai-kelas').value;
-    if(!mapel || !ujian || !kelas) return showNotify('error', 'Lengkapi data kelas, mapel, dan ujian!');
+
+    if(!mapel || !ujian || !kelas) return showNotify('error', 'Lengkapi data Kelas, Mapel, dan Jenis Ujian!');
 
     showLoader(true);
     const todayWIB = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
 
-    const rows = document.querySelectorAll('#nilai-list > div[data-nisn]');
-    const dataRows = Array.from(rows).map(card => {
-        const val = card.querySelector('.nilai-val').value;
-        return val ? {
-            nisn: card.dataset.nisn,
-            nama: card.querySelector('.font-bold').innerText,
-            nilai: val, jenisUjian: ujian, email: userEmail,
+    const rows = document.querySelectorAll('#nilai-list-container > tr[data-nisn]');
+    const dataRows = Array.from(rows).map(row => {
+        const val = row.querySelector('.nilai-val').value;
+        if (val === "" || val === null) return null;
+
+        return {
+            nisn: row.dataset.nisn,
+            nama: row.querySelector('.nama-siswa').innerText,
+            nilai: parseInt(val),
+            jenis_ujian: ujian,
+            email: userEmail,
             tanggal: todayWIB,
             kelas, mapel
-        } : null;
+        };
     }).filter(r => r !== null);
 
-    if(dataRows.length === 0) { showLoader(false); return showNotify('error', 'Isi minimal satu nilai!'); }
+    if(dataRows.length === 0) {
+        showLoader(false);
+        return showNotify('info', 'Isi minimal satu nilai siswa sebelum menyimpan.');
+    }
 
     try {
         await fetch(`${GAS_API_URL}/api`, {
@@ -271,15 +328,19 @@ async function saveNilai() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ action: 'save_nilai', rows: dataRows })
         });
-        showNotify('success', 'Nilai Tersimpan!');
+        showNotify('success', `Berhasil menyimpan ${dataRows.length} nilai siswa!`);
+
+        // Reset Form Nilai
         document.getElementById('nilai-kelas').value = '';
         document.getElementById('nilai-mapel').value = '';
         document.getElementById('nilai-ujian').value = '';
-        document.getElementById('nilai-list').innerHTML = '';
-        switchTab('dashboard');
+        document.getElementById('nilai-table-card').classList.add('hidden'); // Sembunyikan lagi cardnya
+
     } catch(e) { showNotify('error', 'Gagal menyimpan nilai.'); }
     finally { showLoader(false); }
 }
+
+// --- JURNAL ---
 
 async function fetchJurnalData() {
     const kSelect = document.getElementById('filter-jurnal-kelas');
@@ -288,17 +349,12 @@ async function fetchJurnalData() {
     if(mSelect) mSelect.value = "";
 
     const tbody = document.getElementById('jurnal-table-body');
-    tbody.innerHTML = '<tr><td colspan="4" class="p-10 text-center">Memuat data...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="4" class="p-10 text-center text-gray-400">Memuat data...</td></tr>';
     try {
         const res = await fetch(`${GAS_API_URL}/api?action=get_journal`);
         let rawData = await res.json();
-
-        // 1. SORTING: Pastikan data terurut dari Terbaru ke Terlama (Descending)
-        // Kita menggunakan Date constructor untuk membandingkan.
         rawData.sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal));
 
-        // 2. DEDUPLIKASI: Hapus duplikat berdasarkan key
-        // Karena data sudah disort terbaru di atas, map akan menyimpan data yang pertama ditemukan (yaitu yang terbaru).
         const uniqueDataMap = new Map();
         rawData.forEach(item => {
             const key = `${item.tanggal}-${item.kelas}-${item.mapel}`;
@@ -308,25 +364,10 @@ async function fetchJurnalData() {
         });
 
         allJurnalData = Array.from(uniqueDataMap.values());
-
         renderJurnalTable();
     } catch(e) {
         tbody.innerHTML = '<tr><td colspan="4" class="p-10 text-center text-red-500">Gagal mengambil riwayat.</td></tr>';
     }
-}
-
-// Format Tanggal dengan Paksaan TimeZone WIB (Asia/Jakarta)
-function formatTanggalIndo(dateString) {
-    const opsi = {
-        weekday: 'long',
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric', // Menambahkan tahun agar lebih jelas
-        timeZone: 'Asia/Jakarta' // WAJIB: Memastikan waktu dibaca sebagai WIB
-    };
-    const date = new Date(dateString);
-    if (isNaN(date)) return dateString;
-    return date.toLocaleDateString('id-ID', opsi);
 }
 
 function renderJurnalTable() {
@@ -341,13 +382,13 @@ function renderJurnalTable() {
     });
 
     if (filtered.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" class="p-10 text-center text-gray-400">Data tidak ditemukan.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" class="p-10 text-center text-gray-400 italic">Data tidak ditemukan.</td></tr>';
         return;
     }
 
     tbody.innerHTML = filtered.map(j => `
-        <tr class="text-sm hover:bg-gray-50 transition-colors">
-            <td class="p-4 text-gray-500">${formatTanggalIndo(j.tanggal)}</td>
+        <tr class="text-sm hover:bg-amber-50/50 transition-colors border-b border-gray-50 last:border-0">
+            <td class="p-4 text-gray-500 font-mono">${formatTanggalIndo(j.tanggal)}</td>
             <td class="p-4 font-bold text-gray-800">${j.kelas}</td>
             <td class="p-4 text-blue-600 font-medium">${j.mapel}</td>
             <td class="p-4 text-gray-600 italic">${j.materi || '-'}</td>
@@ -355,13 +396,30 @@ function renderJurnalTable() {
     `).join('');
 }
 
+function formatTanggalIndo(dateString) {
+    const opsi = { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Jakarta' };
+    const date = new Date(dateString);
+    if (isNaN(date)) return dateString;
+    return date.toLocaleDateString('id-ID', opsi);
+}
+
 function showNotify(type, msg) {
     const container = document.getElementById('notification-container');
     const el = document.createElement('div');
-    el.className = `p-4 mb-2 rounded-xl shadow-lg text-white font-medium ${type === 'success' ? 'bg-emerald-500' : 'bg-red-500'}`;
-    el.innerText = msg;
+    const bgColor = type === 'success' ? 'bg-emerald-500' : (type === 'error' ? 'bg-red-500' : 'bg-blue-500');
+    const icon = type === 'success' ? 'check-circle' : (type === 'error' ? 'alert-circle' : 'info');
+
+    el.className = `p-4 mb-2 rounded-xl shadow-lg text-white font-medium flex items-center gap-3 transform translate-x-10 opacity-0 transition-all duration-300 ${bgColor}`;
+    el.innerHTML = `<i data-lucide="${icon}" class="w-5 h-5"></i> <span>${msg}</span>`;
+
     container.appendChild(el);
-    setTimeout(() => el.remove(), 4000);
+    lucide.createIcons();
+
+    requestAnimationFrame(() => el.classList.remove('translate-x-10', 'opacity-0'));
+    setTimeout(() => {
+        el.classList.add('translate-x-full', 'opacity-0');
+        setTimeout(() => el.remove(), 300);
+    }, 4000);
 }
 
 function showLoader(show) { document.getElementById('global-loader').classList.toggle('hidden', !show); }

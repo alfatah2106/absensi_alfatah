@@ -1,0 +1,73 @@
+/* Global Setup */
+body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
+
+/* Tab Styles */
+.tab-active { border-bottom: 2px solid #0f172a; color: #0f172a; font-weight: 600; }
+.tab-inactive { color: #64748b; border-bottom: 2px solid transparent; }
+.tab-inactive:hover { color: #334155; background-color: #f8fafc; }
+
+/* Subtab/Filter */
+.subtab-active { background-color: #e2e8f0; color: #0f172a; font-weight: 600; }
+.subtab-inactive { color: #64748b; }
+.subtab-inactive:hover { background-color: #f1f5f9; }
+
+/* Animations & Loader */
+.fade-in { animation: fadeIn 0.3s ease-in-out; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+.loader { border: 3px solid #f3f3f3; border-radius: 50%; border-top: 3px solid #4f46e5; width: 24px; height: 24px; animation: spin 1s linear infinite; }
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+/* Sticky Table Columns */
+.sticky-col { position: sticky; left: 0; background-color: white; z-index: 10; border-right: 1px solid #e2e8f0; }
+.sticky-header { position: sticky; left: 0; z-index: 20; border-right: 1px solid #e2e8f0; }
+
+/* Slip Paper Style */
+.slip-paper {
+    background: white;
+    /* Ensure it looks like A4 on screen if needed, or just fluid */
+}
+
+/* PRINT STYLES - CRITICAL FOR SLIP */
+@media print {
+    body {
+        background-color: white;
+        color: black;
+    }
+
+    /* Hide everything that isn't the slip */
+    nav,
+    #btn-refresh,
+    .tab-active, .tab-inactive,
+    .subtab-active, .subtab-inactive,
+    #filter-guru-section, /* If any specific filter ID */
+    button, /* Hide all buttons */
+    #content-guru,
+    #content-siswa,
+    #slip-empty,
+    .print\:hidden {
+        display: none !important;
+    }
+
+    /* Force Slip Content to Show */
+    #content-slip, #slip-preview-container {
+        display: block !important;
+        visibility: visible !important;
+    }
+
+    /* Reset Shadows and Borders for Paper */
+    .slip-paper {
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    /* Ensure Table Borders Print */
+    table, th, td {
+        border: 1px solid #000 !important;
+        border-collapse: collapse !important;
+    }
+    th { background-color: #f3f4f6 !important; -webkit-print-color-adjust: exact; }
+}
