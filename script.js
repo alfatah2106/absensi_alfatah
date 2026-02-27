@@ -68,7 +68,7 @@ async function fetchData() {
         const res = await fetch(`${GAS_API_URL}/api?action=get_db`);
         dbStudents = await res.json();
 
-        if(kelasOptions.length === 0) populateFilters();
+        if (kelasOptions.length === 0) populateFilters();
     } catch (e) { showNotify('error', 'Gagal memuat data siswa.'); }
     finally { showLoader(false); }
 }
@@ -77,7 +77,7 @@ function populateFilters() {
     const kelasTargets = ['absensi-kelas', 'nilai-kelas', 'filter-jurnal-kelas'];
     kelasTargets.forEach(id => {
         const el = document.getElementById(id);
-        if(el) {
+        if (el) {
             const firstOpt = el.options[0] ? el.options[0].text : "-- Pilih --";
             el.innerHTML = `<option value="">${firstOpt}</option>`;
 
@@ -94,7 +94,7 @@ function populateFilters() {
     const mapelTargets = ['absensi-mapel', 'nilai-mapel', 'filter-jurnal-mapel'];
     mapelTargets.forEach(id => {
         const el = document.getElementById(id);
-        if(el) {
+        if (el) {
             const firstOpt = el.options[0] ? el.options[0].text : "-- Pilih --";
             el.innerHTML = `<option value="">${firstOpt}</option>`;
             if (mapelOptions.length > 0) {
@@ -117,18 +117,18 @@ function switchTab(tabId) {
     document.getElementById(`tab-${tabId}`).classList.remove('hidden-tab');
     document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.classList.remove('active-tab-btn');
-        if(btn.dataset.tab === tabId) btn.classList.add('active-tab-btn');
+        if (btn.dataset.tab === tabId) btn.classList.add('active-tab-btn');
     });
 
     // PERBAIKAN: Fetch Jurnal hanya jika tab dibuka
-    if(tabId === 'jurnal') fetchJurnalData();
-    if(tabId === 'nilai') loadSiswaNilai();
+    if (tabId === 'jurnal') fetchJurnalData();
+    if (tabId === 'nilai') loadSiswaNilai();
 }
 
 // --- ABSENSI ---
 
 function applyDefaultNilaiAbsensi(val) {
-    if(!val) return;
+    if (!val) return;
     document.querySelectorAll('.nilai-absensi-input').forEach(el => {
         el.value = val;
         el.parentElement.classList.add('ring-2', 'ring-blue-300');
@@ -139,10 +139,15 @@ function applyDefaultNilaiAbsensi(val) {
 function loadSiswaAbsensi() {
     const kelas = document.getElementById('absensi-kelas').value;
     const container = document.getElementById('absensi-list');
-    if(!kelas) { container.innerHTML = ''; return; }
+    if (!kelas) { container.innerHTML = ''; return; }
 
     const filtered = dbStudents.filter(s => s.kelas === kelas);
-    filtered.sort((a,b) => a.nama.localeCompare(b.nama));
+    filtered.sort((a, b) => {
+        if (a.gender !== b.gender) {
+            return (a.gender || "").localeCompare(b.gender || "");
+        }
+        return a.nama.localeCompare(b.nama);
+    });
 
     if (filtered.length === 0) {
         container.innerHTML = '<div class="text-center p-4 text-gray-500 italic bg-gray-50 rounded-lg">Tidak ada siswa di kelas ini.</div>';
@@ -152,7 +157,7 @@ function loadSiswaAbsensi() {
     container.innerHTML = filtered.map((s, idx) => `
         <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col md:flex-row justify-between items-center gap-4 transition-all hover:border-blue-400" data-nisn="${s.nisn || ''}">
             <div class="flex items-center gap-4 w-full md:w-auto">
-                <div class="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs border border-blue-100">${idx+1}</div>
+                <div class="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-xs border border-blue-100">${idx + 1}</div>
                 <div>
                     <div class="font-bold text-gray-800 nama-siswa">${s.nama}</div>
                     <div class="text-xs text-gray-400 font-mono">${s.nisn}</div>
@@ -195,9 +200,9 @@ async function saveAbsensi() {
     const materi = document.getElementById('absensi-materi').value;
     const selectedJams = Array.from(document.querySelectorAll('.jam-checkbox:checked')).map(cb => cb.value);
 
-    if(!mapel) return showNotify('error', 'Pilih Mata Pelajaran!');
-    if(!materi) return showNotify('error', 'Materi wajib diisi!');
-    if(selectedJams.length === 0) return showNotify('error', 'Pilih minimal satu jam pelajaran!');
+    if (!mapel) return showNotify('error', 'Pilih Mata Pelajaran!');
+    if (!materi) return showNotify('error', 'Materi wajib diisi!');
+    if (selectedJams.length === 0) return showNotify('error', 'Pilih minimal satu jam pelajaran!');
 
     showLoader(true);
     const rows = [];
@@ -252,14 +257,19 @@ function loadSiswaNilai() {
     const tableCard = document.getElementById('nilai-table-card');
 
     // PERBAIKAN: Sembunyikan card jika belum pilih kelas
-    if(!kelas) {
+    if (!kelas) {
         tableCard.classList.add('hidden');
         container.innerHTML = '';
         return;
     }
 
     const filtered = dbStudents.filter(s => s.kelas === kelas);
-    filtered.sort((a, b) => a.nama.localeCompare(b.nama));
+    filtered.sort((a, b) => {
+        if (a.gender !== b.gender) {
+            return (a.gender || "").localeCompare(b.gender || "");
+        }
+        return a.nama.localeCompare(b.nama);
+    });
 
     if (filtered.length === 0) {
         tableCard.classList.remove('hidden');
@@ -296,7 +306,7 @@ async function saveNilai() {
     const ujian = document.getElementById('nilai-ujian').value;
     const kelas = document.getElementById('nilai-kelas').value;
 
-    if(!mapel || !ujian || !kelas) return showNotify('error', 'Lengkapi data Kelas, Mapel, dan Jenis Ujian!');
+    if (!mapel || !ujian || !kelas) return showNotify('error', 'Lengkapi data Kelas, Mapel, dan Jenis Ujian!');
 
     showLoader(true);
     const todayWIB = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jakarta' });
@@ -317,7 +327,7 @@ async function saveNilai() {
         };
     }).filter(r => r !== null);
 
-    if(dataRows.length === 0) {
+    if (dataRows.length === 0) {
         showLoader(false);
         return showNotify('info', 'Isi minimal satu nilai siswa sebelum menyimpan.');
     }
@@ -336,7 +346,7 @@ async function saveNilai() {
         document.getElementById('nilai-ujian').value = '';
         document.getElementById('nilai-table-card').classList.add('hidden'); // Sembunyikan lagi cardnya
 
-    } catch(e) { showNotify('error', 'Gagal menyimpan nilai.'); }
+    } catch (e) { showNotify('error', 'Gagal menyimpan nilai.'); }
     finally { showLoader(false); }
 }
 
@@ -345,8 +355,8 @@ async function saveNilai() {
 async function fetchJurnalData() {
     const kSelect = document.getElementById('filter-jurnal-kelas');
     const mSelect = document.getElementById('filter-jurnal-mapel');
-    if(kSelect) kSelect.value = "";
-    if(mSelect) mSelect.value = "";
+    if (kSelect) kSelect.value = "";
+    if (mSelect) mSelect.value = "";
 
     const tbody = document.getElementById('jurnal-table-body');
     tbody.innerHTML = '<tr><td colspan="4" class="p-10 text-center text-gray-400">Memuat data...</td></tr>';
@@ -365,7 +375,7 @@ async function fetchJurnalData() {
 
         allJurnalData = Array.from(uniqueDataMap.values());
         renderJurnalTable();
-    } catch(e) {
+    } catch (e) {
         tbody.innerHTML = '<tr><td colspan="4" class="p-10 text-center text-red-500">Gagal mengambil riwayat.</td></tr>';
     }
 }

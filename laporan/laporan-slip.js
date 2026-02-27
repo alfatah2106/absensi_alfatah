@@ -58,7 +58,7 @@ function generateSlipGuru() {
             }
 
             // Kondisi Pukul (Luar 08:00 - 14:00)
-            const isOutsideTime = hoursInt !== -1 && (hoursInt < 8 || hoursInt >= 14);
+            const isOutsideTime = hoursInt !== -1 && (hoursInt < 7 || hoursInt >= 14);
 
             uniqueSessions.push({
                 tanggal: row.tanggal,
